@@ -578,7 +578,7 @@ func TestEnableWebUI(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/ui/", nil)
 		// Perform the request
 		resp := httptest.NewRecorder()
-		s.mux.ServeHTTP(resp, req)
+		s.srv.Handler.ServeHTTP(resp, req)
 
 		// Check the result
 		if resp.Code != 200 {

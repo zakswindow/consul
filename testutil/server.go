@@ -243,7 +243,7 @@ func NewTestServerConfig(name string, cb ServerConfigCallback) (*TestServer, err
 		httpAddr = consulConfig.Addresses.HTTP
 		trans := cleanhttp.DefaultTransport()
 		trans.DialContext = func(_ context.Context, _, _ string) (net.Conn, error) {
-			return net.Dial("unix", httpAddr[7:])
+			return net.Dial("unix", httpAddr[len("unix://"):])
 		}
 		client = &http.Client{
 			Transport: trans,

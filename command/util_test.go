@@ -67,34 +67,27 @@ func testAgentWithConfigReload(t *testing.T, cb func(c *agent.Config), reloadCh 
 		cb(conf)
 	}
 
-	dir := testutil.TempDir(t, "agent")
-	conf.DataDir = dir
-
+	conf.DataDir = testutil.TempDir(t, "agent")
 	a, err := agent.Create(conf, lw, nil, reloadCh)
 	if err != nil {
-		os.RemoveAll(dir)
-		t.Fatalf(fmt.Sprintf("err: %v", err))
+		os.RemoveAll(conf.DataDir)
+		t.Fatalf("err: %v", err)
 	}
 
 	conf.Addresses.HTTP = "127.0.0.1"
-	httpAddr := fmt.Sprintf("127.0.0.1:%d", conf.Ports.HTTP)
-	http, err := agent.NewHTTPServers(a)
+	addr := fmt.Sprintf("%s:%d", conf.Addresses.HTTP, conf.Ports.HTTP)
+	srv, err := agent.NewHTTPServer(a, "http", "tcp", addr)
 	if err != nil {
-		os.RemoveAll(dir)
-		t.Fatalf(fmt.Sprintf("err: %v", err))
-	}
-
-	if http == nil || len(http) == 0 {
-		os.RemoveAll(dir)
-		t.Fatalf(fmt.Sprintf("Could not create HTTP server to listen on: %s", httpAddr))
+		os.RemoveAll(conf.DataDir)
+		t.Fatalf("err: %v", err)
 	}
 
 	return &agentWrapper{
-		dir:      dir,
+		dir:      conf.DataDir,
 		config:   conf,
 		agent:    a,
-		http:     http[0],
-		httpAddr: httpAddr,
+		http:     srv,
+		httpAddr: addr,
 	}
 }
 
