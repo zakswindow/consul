@@ -459,7 +459,14 @@ func (c *Command) setupAgent(config *Config, logOutput io.Writer, logWriter *log
 	}
 	c.agent = agent
 
-	servers, err := NewHTTPServers(agent, config.HTTPAddrs())
+	httpAddrs, err := config.HTTPAddrs()
+	if err != nil {
+		agent.Shutdown()
+		c.UI.Error(fmt.Sprintf("Invalid bind address: %s", err))
+		return err
+	}
+
+	servers, err := NewHTTPServers(agent, httpAddrs)
 	if err != nil {
 		agent.Shutdown()
 		c.UI.Error(fmt.Sprintf("Error starting http servers: %s", err))
