@@ -36,6 +36,9 @@ func NewHTTPServer(agent *Agent, proto, network, addr string) (*HTTPServer, erro
 	case "http":
 		switch network {
 		case "unix":
+			if _, err := os.Stat(addr); !os.IsNotExist(err) {
+				agent.logger.Printf("[WARN] agent: Replacing socket %q", addr)
+			}
 			l, err = listenUnix(addr, cfg.UnixSockets)
 		case "tcp":
 			l, err = listenHTTP(addr)
