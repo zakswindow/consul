@@ -738,6 +738,29 @@ type Config struct {
 	DeprecatedAtlasEndpoint       string `mapstructure:"atlas_endpoint" json:"-"`
 }
 
+// HTTPAddrs returns a list of addresses the HTTP endpoint should bind to.
+// The format of the entries are <proto>+<network>://<addr>
+//
+// Examples:
+//
+//    http+tcp://1.2.3.4:8500
+//    https+tcp://1.2.3.4:8600
+//    http+unix:///path/to/socket
+func (c *Config) HTTPAddrs() []string {
+	var addrs []string
+	var path = socketPath(c.Addresses.HTTP)
+	if c.Ports.HTTP > 0 && path != "" {
+		addrs = append(addrs, fmt.Sprintf("http+unix://%s", path))
+	}
+	if c.Ports.HTTP > 0 && path == "" {
+		addrs = append(addrs, fmt.Sprintf("http+tcp://%s:%d", c.Addresses.HTTP, c.Ports.HTTP))
+	}
+	if c.Ports.HTTPS > 0 {
+		addrs = append(addrs, fmt.Sprintf("https+tcp://%s:%d", c.Addresses.HTTPS, c.Ports.HTTPS))
+	}
+	return addrs
+}
+
 // Bool is used to initialize bool pointers in struct literals.
 func Bool(b bool) *bool {
 	return &b

@@ -459,15 +459,13 @@ func (c *Command) setupAgent(config *Config, logOutput io.Writer, logWriter *log
 	}
 	c.agent = agent
 
-	if config.Ports.HTTP > 0 || config.Ports.HTTPS > 0 {
-		servers, err := NewHTTPServers(agent)
-		if err != nil {
-			agent.Shutdown()
-			c.UI.Error(fmt.Sprintf("Error starting http servers: %s", err))
-			return err
-		}
-		c.httpServers = servers
+	servers, err := NewHTTPServers(agent, config.HTTPAddrs())
+	if err != nil {
+		agent.Shutdown()
+		c.UI.Error(fmt.Sprintf("Error starting http servers: %s", err))
+		return err
 	}
+	c.httpServers = servers
 
 	if config.Ports.DNS > 0 {
 		dnsAddr, err := config.ClientListener(config.Addresses.DNS, config.Ports.DNS)

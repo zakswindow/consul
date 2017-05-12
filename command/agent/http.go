@@ -69,7 +69,7 @@ func NewHTTPServer(agent *Agent, proto, network, addr string) (*HTTPServer, erro
 
 // NewHTTPServers starts new HTTP servers to provide an interface to
 // the agent.
-func NewHTTPServers(agent *Agent) ([]*HTTPServer, error) {
+func NewHTTPServers(agent *Agent, addrs []string) ([]*HTTPServer, error) {
 	var pending []*HTTPServer
 	defer func() {
 		for _, srv := range pending {
@@ -77,30 +77,19 @@ func NewHTTPServers(agent *Agent) ([]*HTTPServer, error) {
 		}
 	}()
 
-	cfg := agent.config
-	path := socketPath(cfg.Addresses.HTTP)
-	http, https := cfg.Ports.HTTP > 0, cfg.Ports.HTTPS > 0
-
-	if https {
-		addr := fmt.Sprintf("%s:%d", cfg.Addresses.HTTPS, cfg.Ports.HTTPS)
-		srv, err := NewHTTPServer(agent, "https", "tcp", addr)
-		if err != nil {
-			return nil, err
+	for _, addr := range addrs {
+		var proto, network string
+		switch {
+		case strings.HasPrefix(addr, "http+tcp://"):
+			proto, network, addr = "http", "tcp", addr[len("http+tcp://"):]
+		case strings.HasPrefix(addr, "https+tcp://"):
+			proto, network, addr = "https", "tcp", addr[len("https+tcp://"):]
+		case strings.HasPrefix(addr, "http+unix://"):
+			proto, network, addr = "http", "unix", addr[len("http+unix://"):]
+		default:
+			return nil, fmt.Errorf("http: invalid address %s", addr)
 		}
-		pending = append(pending, srv)
-	}
-
-	if http && path == "" {
-		addr := fmt.Sprintf("%s:%d", cfg.Addresses.HTTP, cfg.Ports.HTTP)
-		srv, err := NewHTTPServer(agent, "http", "tcp", addr)
-		if err != nil {
-			return nil, err
-		}
-		pending = append(pending, srv)
-	}
-
-	if http && path != "" {
-		srv, err := NewHTTPServer(agent, "http", "unix", path)
+		srv, err := NewHTTPServer(agent, proto, network, addr)
 		if err != nil {
 			return nil, err
 		}
